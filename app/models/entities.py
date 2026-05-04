@@ -17,6 +17,7 @@ class Track:
     artist: str
     album: str
     duration: int = 0
+    cover_art: str = ""
 
     @property
     def pretty_duration(self) -> str:

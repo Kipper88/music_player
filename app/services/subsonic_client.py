@@ -56,6 +56,7 @@ class SubsonicClient:
                     artist=s.get("artist", "Unknown Artist"),
                     album=s.get("album", "Unknown Album"),
                     duration=int(s.get("duration", 0) or 0),
+                    cover_art=str(s.get("coverArt", "")),
                 )
             )
         return tracks
@@ -64,3 +65,11 @@ class SubsonicClient:
         params = self._auth_params()
         query = "&".join(f"{k}={v}" for k, v in params.items())
         return f"{self.config.base_url.rstrip('/')}/rest/stream.view?id={track_id}&{query}"
+
+
+    def cover_art_url(self, cover_art_id: str, size: int = 300) -> str:
+        if not cover_art_id:
+            return ""
+        params = self._auth_params()
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        return f"{self.config.base_url.rstrip('/')}/rest/getCoverArt.view?id={cover_art_id}&size={size}&{query}"
