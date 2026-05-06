@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -87,6 +88,7 @@ class MainWindow(QMainWindow):
         self.player = PlayerController()
         self.tracks: list[Track] = []
         self.visible_tracks: list[Track] = []
+        self.quick_track_buttons: list[QPushButton] = []
         self.track_page_size = 100
         self.track_offset = 0
         self.seek_is_dragging = False
@@ -240,6 +242,9 @@ class MainWindow(QMainWindow):
         quick.addStretch()
         layout.addLayout(quick)
 
+        layout.addWidget(self._title("Быстрый доступ"))
+        layout.addWidget(self._quick_access_panel())
+
         self.playlist_list = QListWidget()
         self.playlist_list.itemClicked.connect(self.show_playlist)
         self.refresh_playlists_ui()
@@ -264,6 +269,28 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.search_input)
         layout.addWidget(self.track_list, 4)
         layout.addWidget(add_to_playlist)
+        return panel
+
+    def _quick_access_panel(self) -> QFrame:
+        """Возвращает карточки быстрого доступа, которые были в первом макете UI.
+
+        Карточки остаются частью интерфейса, но теперь они не захардкожены: после
+        загрузки сервера сюда попадают реальные треки из текущей библиотеки.
+        """
+        panel = QFrame()
+        panel.setObjectName("Panel")
+        grid = QGridLayout(panel)
+        grid.setContentsMargins(10, 10, 10, 10)
+        grid.setHorizontalSpacing(10)
+        grid.setVerticalSpacing(10)
+
+        for index in range(8):
+            button = self._button("Загрузите треки")
+            button.setMinimumHeight(54)
+            button.clicked.connect(lambda _checked=False, row=index: self.play_quick_track(row))
+            self.quick_track_buttons.append(button)
+            grid.addWidget(button, index // 4, index % 4)
+
         return panel
 
     def _right_panel(self) -> QFrame:
@@ -482,6 +509,32 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка догрузки", str(exc))
 
+    def _refresh_quick_access(self, items: list[Track]) -> None:
+        """Обновляет карточки быстрого доступа реальными треками сервера."""
+        for index, button in enumerate(self.quick_track_buttons):
+            if index < len(items):
+                track = items[index]
+                button.setText(f"▶ {track.title}\n{track.artist}")
+                button.setEnabled(True)
+            else:
+                button.setText("Загрузите треки")
+                button.setEnabled(False)
+
+    def play_quick_track(self, index: int) -> None:
+        """Запускает трек из карточки быстрого доступа."""
+        if index >= len(self.visible_tracks):
+            return
+        track = self.visible_tracks[index]
+        self._select_track_in_list(track.id)
+        self.play_track_by_id(track.id)
+
+    def _select_track_in_list(self, track_id: str) -> None:
+        """Выделяет трек в списке, если он сейчас видим."""
+        for row in range(self.track_list.count()):
+            if self.track_list.item(row).data(Qt.UserRole) == track_id:
+                self.track_list.setCurrentRow(row)
+                return
+
     def render_tracks(self, items: list[Track]) -> None:
         self.visible_tracks = items
         self.track_list.clear()
@@ -491,6 +544,7 @@ class MainWindow(QMainWindow):
             )
             item.setData(Qt.UserRole, track.id)
             self.track_list.addItem(item)
+        self._refresh_quick_access(items)
 
     def filter_tracks(self, text: str) -> None:
         query = text.lower().strip()
