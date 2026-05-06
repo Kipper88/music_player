@@ -1,0 +1,13 @@
+class SpotifyColors:
+    """Spotify color palette"""
+    BLACK = "#000000"
+    DARK_BASE = "#121212"
+    DARK_ELEVATED = "#181818"
+    DARK_HIGHLIGHT = "#282828"
+    DARK_PRESS = "#3e3e3e"
+    GREEN = "#1db954"
+    GREEN_HOVER = "#1ed760"
+    WHITE = "#ffffff"
+    SUBDUED = "#b3b3b3"
+    TEXT_SECONDARY = "#a7a7a7"
+    RED = "#e91429"
